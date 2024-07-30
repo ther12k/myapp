@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/transaction.dart';
 import '../screens/budgets_screen.dart';
+import '../screens/analytics_screen.dart';
 import '../widgets/transaction_item.dart';
+import '../widgets/add_transaction_dialog.dart';  // New import
+import '../styles/app_styles.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
