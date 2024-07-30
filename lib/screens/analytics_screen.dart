@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../models/transaction.dart';
 import '../styles/app_styles.dart';
 
@@ -16,8 +17,8 @@ class AnalyticsScreen extends StatelessWidget {
       ),
       body: transactions.isEmpty
           ? Center(
-              child:
-                  Text('No transactions yet.', style: AppStyles.bodyTextStyle))
+              child: Text('No transactions yet. Add some to see analytics!',
+                  style: AppStyles.bodyTextStyle))
           : SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -26,9 +27,9 @@ class AnalyticsScreen extends StatelessWidget {
                   children: [
                     _buildTotalSpendingCard(),
                     const SizedBox(height: 24),
-                    _buildSpendingCategoryChart(),
+                    _buildSpendingCategoryPieChart(),
                     const SizedBox(height: 24),
-                    _buildMonthlySpendingChart(),
+                    _buildMonthlySpendingLineChart(),
                   ],
                 ),
               ),
@@ -54,8 +55,7 @@ class AnalyticsScreen extends StatelessWidget {
                   ? '₹${totalSpending.toStringAsFixed(2)}'
                   : 'No expenses yet',
               style: AppStyles.headingStyle.copyWith(
-                color: totalSpending > 0 ? Colors.red : Colors.grey,
-              ),
+                  color: totalSpending > 0 ? Colors.red : Colors.grey),
             ),
           ],
         ),
@@ -63,7 +63,7 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSpendingCategoryChart() {
+  Widget _buildSpendingCategoryPieChart() {
     Map<String, double> categorySpending = {};
     for (var t in transactions.where((t) => t.amount < 0)) {
       categorySpending[t.title] =
@@ -74,13 +74,24 @@ class AnalyticsScreen extends StatelessWidget {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Text('No expense categories yet.',
+          child: Text('No expense data to show category breakdown.',
               style: AppStyles.bodyTextStyle),
         ),
       );
     }
 
-    double total = categorySpending.values.reduce((a, b) => a + b);
+    List<PieChartSectionData> sections = categorySpending.entries.map((e) {
+      return PieChartSectionData(
+        color: Colors.primaries[categorySpending.keys.toList().indexOf(e.key) %
+            Colors.primaries.length],
+        value: e.value,
+        title:
+            '${e.key}\n${(e.value / categorySpending.values.reduce((a, b) => a + b) * 100).toStringAsFixed(1)}%',
+        radius: 100,
+        titleStyle: const TextStyle(
+            fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+      );
+    }).toList();
 
     return Card(
       child: Padding(
@@ -91,38 +102,13 @@ class AnalyticsScreen extends StatelessWidget {
             Text('Spending by Category', style: AppStyles.subheadingStyle),
             const SizedBox(height: 16),
             SizedBox(
-              height: 200,
-              child: ListView.builder(
-                itemCount: categorySpending.length,
-                itemBuilder: (context, index) {
-                  String category = categorySpending.keys.elementAt(index);
-                  double amount = categorySpending[category]!;
-                  double percentage = amount / total;
-                  return Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(category),
-                          ),
-                          Expanded(
-                            flex: 7,
-                            child: LinearProgressIndicator(
-                              value: percentage,
-                              color: Colors
-                                  .primaries[index % Colors.primaries.length],
-                              backgroundColor: Colors.grey[200],
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Text('${(percentage * 100).toStringAsFixed(1)}%'),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                    ],
-                  );
-                },
+              height: 300,
+              child: PieChart(
+                PieChartData(
+                  sections: sections,
+                  sectionsSpace: 0,
+                  centerSpaceRadius: 40,
+                ),
               ),
             ),
           ],
@@ -131,7 +117,7 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMonthlySpendingChart() {
+  Widget _buildMonthlySpendingLineChart() {
     Map<int, double> monthlySpending = {};
     for (var t in transactions.where((t) => t.amount < 0)) {
       int month = t.date.month;
@@ -142,13 +128,18 @@ class AnalyticsScreen extends StatelessWidget {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Text('No monthly spending data yet.',
+          child: Text('No monthly spending data to show chart.',
               style: AppStyles.bodyTextStyle),
         ),
       );
     }
 
-    double maxSpending = monthlySpending.values.reduce((a, b) => a > b ? a : b);
+    List<FlSpot> spots = monthlySpending.entries
+        .map((e) => FlSpot(e.key.toDouble(), e.value))
+        .toList()
+      ..sort((a, b) => a.x.compareTo(b.x));
+
+    double maxY = monthlySpending.values.reduce((a, b) => a > b ? a : b);
 
     return Card(
       child: Padding(
@@ -159,44 +150,75 @@ class AnalyticsScreen extends StatelessWidget {
             Text('Monthly Spending', style: AppStyles.subheadingStyle),
             const SizedBox(height: 16),
             SizedBox(
-              height: 200,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: List.generate(12, (index) {
-                  int month = index + 1;
-                  double spending = monthlySpending[month] ?? 0;
-                  double barHeight =
-                      maxSpending > 0 ? (spending / maxSpending * 180) : 0;
-                  return Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          height: barHeight,
-                          color: AppStyles.primaryColor,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          [
-                            'J',
-                            'F',
-                            'M',
-                            'A',
-                            'M',
-                            'J',
-                            'J',
-                            'A',
-                            'S',
-                            'O',
-                            'N',
-                            'D'
-                          ][index],
-                          style: TextStyle(fontSize: 10),
-                        ),
-                      ],
+              height: 300,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) =>
+                            Text('₹${value.toInt()}'),
+                      ),
                     ),
-                  );
-                }),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const style = TextStyle(fontSize: 10);
+                          String text;
+                          switch (value.toInt()) {
+                            case 1:
+                              text = 'Jan';
+                              break;
+                            case 3:
+                              text = 'Mar';
+                              break;
+                            case 5:
+                              text = 'May';
+                              break;
+                            case 7:
+                              text = 'Jul';
+                              break;
+                            case 9:
+                              text = 'Sep';
+                              break;
+                            case 11:
+                              text = 'Nov';
+                              break;
+                            default:
+                              return const SizedBox.shrink();
+                          }
+                          return Text(text, style: style);
+                        },
+                      ),
+                    ),
+                    topTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(show: true),
+                  minX: 1,
+                  maxX: 12,
+                  minY: 0,
+                  maxY: maxY * 1.2,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      color: AppStyles.primaryColor,
+                      barWidth: 4,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                          show: true,
+                          color: AppStyles.primaryColor.withOpacity(0.3)),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
