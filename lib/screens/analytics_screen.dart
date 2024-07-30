@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/transaction.dart';
+import '../styles/app_styles.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   final List<Transaction> transactions;
 
-  const AnalyticsScreen({Key? key, required this.transactions}) : super(key: key);
+  const AnalyticsScreen({Key? key, required this.transactions})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -42,14 +44,14 @@ class AnalyticsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Total Spending',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppStyles.subheadingStyle,
             ),
             const SizedBox(height: 8),
             Text(
               '₹${totalSpending.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 24, color: Colors.red),
+              style: AppStyles.headingStyle.copyWith(color: Colors.red),
             ),
           ],
         ),
@@ -60,16 +62,20 @@ class AnalyticsScreen extends StatelessWidget {
   Widget _buildSpendingCategoryPieChart() {
     Map<String, double> categorySpending = {};
     for (var t in transactions.where((t) => t.amount < 0)) {
-      categorySpending[t.title] = (categorySpending[t.title] ?? 0) + t.amount.abs();
+      categorySpending[t.title] =
+          (categorySpending[t.title] ?? 0) + t.amount.abs();
     }
 
     List<PieChartSectionData> sections = categorySpending.entries.map((e) {
       return PieChartSectionData(
-        color: Colors.primaries[categorySpending.keys.toList().indexOf(e.key) % Colors.primaries.length],
+        color: Colors.primaries[categorySpending.keys.toList().indexOf(e.key) %
+            Colors.primaries.length],
         value: e.value,
-        title: '${e.key}\n${(e.value / categorySpending.values.reduce((a, b) => a + b) * 100).toStringAsFixed(1)}%',
+        title:
+            '${e.key}\n${(e.value / categorySpending.values.reduce((a, b) => a + b) * 100).toStringAsFixed(1)}%',
         radius: 100,
-        titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+        titleStyle: const TextStyle(
+            fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
       );
     }).toList();
 
@@ -79,9 +85,9 @@ class AnalyticsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Spending by Category',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppStyles.subheadingStyle,
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -118,9 +124,9 @@ class AnalyticsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Monthly Spending',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppStyles.subheadingStyle,
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -129,36 +135,50 @@ class AnalyticsScreen extends StatelessWidget {
                 LineChartData(
                   gridData: FlGridData(show: false),
                   titlesData: FlTitlesData(
-                    leftTitles: SideTitles(showTitles: true),
-                    bottomTitles: SideTitles(
-                      showTitles: true,
-                      getTitles: (value) {
-                        switch (value.toInt()) {
-                          case 1: return 'Jan';
-                          case 3: return 'Mar';
-                          case 5: return 'May';
-                          case 7: return 'Jul';
-                          case 9: return 'Sep';
-                          case 11: return 'Nov';
-                          default: return '';
-                        }
-                      },
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          switch (value.toInt()) {
+                            case 1:
+                              return Text('Jan');
+                            case 3:
+                              return Text('Mar');
+                            case 5:
+                              return Text('May');
+                            case 7:
+                              return Text('Jul');
+                            case 9:
+                              return Text('Sep');
+                            case 11:
+                              return Text('Nov');
+                            default:
+                              return Text('');
+                          }
+                        },
+                      ),
                     ),
                   ),
                   borderData: FlBorderData(show: true),
                   minX: 1,
                   maxX: 12,
                   minY: 0,
-                  maxY: monthlySpending.values.reduce((a, b) => a > b ? a : b) * 1.2,
+                  maxY: monthlySpending.values.reduce((a, b) => a > b ? a : b) *
+                      1.2,
                   lineBarsData: [
                     LineChartBarData(
                       spots: spots,
                       isCurved: true,
-                      colors: [Colors.blue],
+                      color: AppStyles.primaryColor,
                       barWidth: 4,
                       isStrokeCapRound: true,
                       dotData: FlDotData(show: true),
-                      belowBarData: BarAreaData(show: true, colors: [Colors.blue.withOpacity(0.3)]),
+                      belowBarData: BarAreaData(
+                          show: true,
+                          color: AppStyles.primaryColor.withOpacity(0.3)),
                     ),
                   ],
                 ),
