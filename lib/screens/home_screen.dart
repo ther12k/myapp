@@ -1,6 +1,77 @@
 import 'package:flutter/material.dart';
+import '../models/transaction.dart';
+import '../screens/budgets_screen.dart';
+import '../widgets/transaction_item.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  double _balance = 10000.00;
+  final List<Transaction> _transactions = [];
+  int _currentIndex = 0;
+
+  void _addTransaction(bool isIncome) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String title = '';
+        double amount = 0;
+        return AlertDialog(
+          title: Text(isIncome ? 'Add Income' : 'Add Expense'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: 'Title'),
+                onChanged: (value) => title = value,
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: 'Amount'),
+                keyboardType: TextInputType.number,
+                onChanged: (value) => amount = double.tryParse(value) ?? 0,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: const Text('Add'),
+              onPressed: () {
+                setState(() {
+                  if (isIncome) {
+                    _balance += amount;
+                  } else {
+                    _balance -= amount;
+                    amount = -amount;
+                  }
+                  _transactions.insert(
+                      0,
+                      Transaction(
+                        icon:
+                            isIncome ? Icons.attach_money : Icons.shopping_cart,
+                        title: title,
+                        amount: amount,
+                        date: DateTime.now(),
+                        color: isIncome ? Colors.green : Colors.red,
+                      ));
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -14,7 +85,7 @@ class HomeScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'SmartTrack',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
@@ -24,7 +95,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Card(
                 color: Colors.blue[100],
                 shape: RoundedRectangleBorder(
@@ -35,13 +106,13 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Current balance',
-                        style: TextStyle(fontSize: 16, color: Colors.blue[800]),
+                        style: TextStyle(fontSize: 16, color: Colors.blue),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
-                        '₹10,000.00',
+                        '₹${_balance.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -52,7 +123,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
@@ -63,14 +134,14 @@ class HomeScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      onPressed: () {},
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      onPressed: () => _addTransaction(true),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
                         child: Text('Add Income'),
                       ),
                     ),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -79,46 +150,27 @@ class HomeScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      onPressed: () {},
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      onPressed: () => _addTransaction(false),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
                         child: Text('Add Expense'),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 24),
-              Text(
+              const SizedBox(height: 24),
+              const Text(
                 'Recent Transactions',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Expanded(
-                child: ListView(
-                  children: [
-                    TransactionItem(
-                      icon: Icons.shopping_cart,
-                      title: 'Groceries',
-                      amount: -500,
-                      date: 'Today',
-                      color: Colors.orange,
-                    ),
-                    TransactionItem(
-                      icon: Icons.attach_money,
-                      title: 'Salary',
-                      amount: 50000,
-                      date: 'Yesterday',
-                      color: Colors.green,
-                    ),
-                    TransactionItem(
-                      icon: Icons.restaurant,
-                      title: 'Restaurant',
-                      amount: -1200,
-                      date: '2 days ago',
-                      color: Colors.red,
-                    ),
-                  ],
+                child: ListView.builder(
+                  itemCount: _transactions.length,
+                  itemBuilder: (context, index) {
+                    return TransactionItem(transaction: _transactions[index]);
+                  },
                 ),
               ),
             ],
@@ -126,52 +178,27 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: [
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          if (index == 1) {
+            // Navigate to Analytics screen (to be implemented)
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BudgetsScreen()),
+            );
+          }
+        },
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
               icon: Icon(Icons.pie_chart), label: 'Analytics'),
           BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet), label: 'Budget'),
         ],
-      ),
-    );
-  }
-}
-
-class TransactionItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final double amount;
-  final String date;
-  final Color color;
-
-  const TransactionItem({
-    Key? key,
-    required this.icon,
-    required this.title,
-    required this.amount,
-    required this.date,
-    required this.color,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.2),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(title),
-        subtitle: Text(date),
-        trailing: Text(
-          '${amount >= 0 ? '+' : ''}₹${amount.abs()}',
-          style: TextStyle(
-            color: amount >= 0 ? Colors.green : Colors.red,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
     );
   }

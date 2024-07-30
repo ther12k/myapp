@@ -18,9 +18,9 @@ class SmartTrackApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => HomeScreen(),
-        '/budgets': (context) => BudgetsScreen(),
-      },
+      '/': (context) => HomeScreen(),
+      '/budgets': (context) => const BudgetsScreen(),
+    },
     );
   }
 }
