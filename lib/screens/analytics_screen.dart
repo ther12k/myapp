@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../models/transaction.dart';
 import '../styles/app_styles.dart';
 
@@ -15,21 +14,25 @@ class AnalyticsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Analytics'),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTotalSpendingCard(),
-              const SizedBox(height: 24),
-              _buildSpendingCategoryPieChart(),
-              const SizedBox(height: 24),
-              _buildMonthlySpendingLineChart(),
-            ],
-          ),
-        ),
-      ),
+      body: transactions.isEmpty
+          ? Center(
+              child:
+                  Text('No transactions yet.', style: AppStyles.bodyTextStyle))
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTotalSpendingCard(),
+                    const SizedBox(height: 24),
+                    _buildSpendingCategoryChart(),
+                    const SizedBox(height: 24),
+                    _buildMonthlySpendingChart(),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -47,8 +50,12 @@ class AnalyticsScreen extends StatelessWidget {
             Text('Total Spending', style: AppStyles.subheadingStyle),
             const SizedBox(height: 8),
             Text(
-              '₹${totalSpending.toStringAsFixed(2)}',
-              style: AppStyles.headingStyle.copyWith(color: Colors.red),
+              totalSpending > 0
+                  ? '₹${totalSpending.toStringAsFixed(2)}'
+                  : 'No expenses yet',
+              style: AppStyles.headingStyle.copyWith(
+                color: totalSpending > 0 ? Colors.red : Colors.grey,
+              ),
             ),
           ],
         ),
@@ -56,25 +63,24 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSpendingCategoryPieChart() {
+  Widget _buildSpendingCategoryChart() {
     Map<String, double> categorySpending = {};
     for (var t in transactions.where((t) => t.amount < 0)) {
       categorySpending[t.title] =
           (categorySpending[t.title] ?? 0) + t.amount.abs();
     }
 
-    List<PieChartSectionData> sections = categorySpending.entries.map((e) {
-      return PieChartSectionData(
-        color: Colors.primaries[categorySpending.keys.toList().indexOf(e.key) %
-            Colors.primaries.length],
-        value: e.value,
-        title:
-            '${e.key}\n${(e.value / categorySpending.values.reduce((a, b) => a + b) * 100).toStringAsFixed(1)}%',
-        radius: 100,
-        titleStyle: const TextStyle(
-            fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+    if (categorySpending.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('No expense categories yet.',
+              style: AppStyles.bodyTextStyle),
+        ),
       );
-    }).toList();
+    }
+
+    double total = categorySpending.values.reduce((a, b) => a + b);
 
     return Card(
       child: Padding(
@@ -85,13 +91,38 @@ class AnalyticsScreen extends StatelessWidget {
             Text('Spending by Category', style: AppStyles.subheadingStyle),
             const SizedBox(height: 16),
             SizedBox(
-              height: 300,
-              child: PieChart(
-                PieChartData(
-                  sections: sections,
-                  sectionsSpace: 0,
-                  centerSpaceRadius: 40,
-                ),
+              height: 200,
+              child: ListView.builder(
+                itemCount: categorySpending.length,
+                itemBuilder: (context, index) {
+                  String category = categorySpending.keys.elementAt(index);
+                  double amount = categorySpending[category]!;
+                  double percentage = amount / total;
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Text(category),
+                          ),
+                          Expanded(
+                            flex: 7,
+                            child: LinearProgressIndicator(
+                              value: percentage,
+                              color: Colors
+                                  .primaries[index % Colors.primaries.length],
+                              backgroundColor: Colors.grey[200],
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text('${(percentage * 100).toStringAsFixed(1)}%'),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -100,17 +131,24 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMonthlySpendingLineChart() {
+  Widget _buildMonthlySpendingChart() {
     Map<int, double> monthlySpending = {};
     for (var t in transactions.where((t) => t.amount < 0)) {
       int month = t.date.month;
       monthlySpending[month] = (monthlySpending[month] ?? 0) + t.amount.abs();
     }
 
-    List<FlSpot> spots = monthlySpending.entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
-        .toList()
-      ..sort((a, b) => a.x.compareTo(b.x));
+    if (monthlySpending.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('No monthly spending data yet.',
+              style: AppStyles.bodyTextStyle),
+        ),
+      );
+    }
+
+    double maxSpending = monthlySpending.values.reduce((a, b) => a > b ? a : b);
 
     return Card(
       child: Padding(
@@ -121,76 +159,44 @@ class AnalyticsScreen extends StatelessWidget {
             Text('Monthly Spending', style: AppStyles.subheadingStyle),
             const SizedBox(height: 16),
             SizedBox(
-              height: 300,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(show: false),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles:
-                          SideTitles(showTitles: true, reservedSize: 40),
+              height: 200,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(12, (index) {
+                  int month = index + 1;
+                  double spending = monthlySpending[month] ?? 0;
+                  double barHeight =
+                      maxSpending > 0 ? (spending / maxSpending * 180) : 0;
+                  return Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          height: barHeight,
+                          color: AppStyles.primaryColor,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          [
+                            'J',
+                            'F',
+                            'M',
+                            'A',
+                            'M',
+                            'J',
+                            'J',
+                            'A',
+                            'S',
+                            'O',
+                            'N',
+                            'D'
+                          ][index],
+                          style: TextStyle(fontSize: 10),
+                        ),
+                      ],
                     ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          const style = TextStyle(fontSize: 10);
-                          Widget text;
-                          switch (value.toInt()) {
-                            case 1:
-                              text = const Text('Jan', style: style);
-                              break;
-                            case 3:
-                              text = const Text('Mar', style: style);
-                              break;
-                            case 5:
-                              text = const Text('May', style: style);
-                              break;
-                            case 7:
-                              text = const Text('Jul', style: style);
-                              break;
-                            case 9:
-                              text = const Text('Sep', style: style);
-                              break;
-                            case 11:
-                              text = const Text('Nov', style: style);
-                              break;
-                            default:
-                              text = const Text('');
-                              break;
-                          }
-                          return SideTitleWidget(
-                            axisSide: meta.axisSide,
-                            child: text,
-                          );
-                        },
-                      ),
-                    ),
-                    topTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: true),
-                  minX: 1,
-                  maxX: 12,
-                  minY: 0,
-                  maxY: monthlySpending.values.reduce((a, b) => a > b ? a : b) *
-                      1.2,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: true,
-                      color: AppStyles.primaryColor,
-                      barWidth: 4,
-                      isStrokeCapRound: true,
-                      dotData: FlDotData(show: true),
-                      belowBarData: BarAreaData(
-                          show: true,
-                          color: AppStyles.primaryColor.withOpacity(0.3)),
-                    ),
-                  ],
-                ),
+                  );
+                }),
               ),
             ),
           ],
