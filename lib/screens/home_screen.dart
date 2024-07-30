@@ -3,7 +3,7 @@ import '../models/transaction.dart';
 import '../screens/budgets_screen.dart';
 import '../screens/analytics_screen.dart';
 import '../widgets/transaction_item.dart';
-import '../widgets/add_transaction_dialog.dart';  // New import
+import '../widgets/add_transaction_dialog.dart'; // New import
 import '../styles/app_styles.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -187,7 +187,12 @@ class _HomeScreenState extends State<HomeScreen> {
             _currentIndex = index;
           });
           if (index == 1) {
-            // Navigate to Analytics screen (to be implemented)
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      AnalyticsScreen(transactions: _transactions)),
+            );
           } else if (index == 2) {
             Navigator.push(
               context,
@@ -197,8 +202,10 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: 'Analytics'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Budget'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.pie_chart), label: 'Analytics'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.account_balance_wallet), label: 'Budget'),
         ],
       ),
     );

@@ -44,10 +44,7 @@ class AnalyticsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Total Spending',
-              style: AppStyles.subheadingStyle,
-            ),
+            Text('Total Spending', style: AppStyles.subheadingStyle),
             const SizedBox(height: 8),
             Text(
               '₹${totalSpending.toStringAsFixed(2)}',
@@ -85,10 +82,7 @@ class AnalyticsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Spending by Category',
-              style: AppStyles.subheadingStyle,
-            ),
+            Text('Spending by Category', style: AppStyles.subheadingStyle),
             const SizedBox(height: 16),
             SizedBox(
               height: 300,
@@ -124,10 +118,7 @@ class AnalyticsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Monthly Spending',
-              style: AppStyles.subheadingStyle,
-            ),
+            Text('Monthly Spending', style: AppStyles.subheadingStyle),
             const SizedBox(height: 16),
             SizedBox(
               height: 300,
@@ -136,31 +127,49 @@ class AnalyticsScreen extends StatelessWidget {
                   gridData: FlGridData(show: false),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
+                      sideTitles:
+                          SideTitles(showTitles: true, reservedSize: 40),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
+                          const style = TextStyle(fontSize: 10);
+                          Widget text;
                           switch (value.toInt()) {
                             case 1:
-                              return Text('Jan');
+                              text = const Text('Jan', style: style);
+                              break;
                             case 3:
-                              return Text('Mar');
+                              text = const Text('Mar', style: style);
+                              break;
                             case 5:
-                              return Text('May');
+                              text = const Text('May', style: style);
+                              break;
                             case 7:
-                              return Text('Jul');
+                              text = const Text('Jul', style: style);
+                              break;
                             case 9:
-                              return Text('Sep');
+                              text = const Text('Sep', style: style);
+                              break;
                             case 11:
-                              return Text('Nov');
+                              text = const Text('Nov', style: style);
+                              break;
                             default:
-                              return Text('');
+                              text = const Text('');
+                              break;
                           }
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            child: text,
+                          );
                         },
                       ),
                     ),
+                    topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true),
                   minX: 1,
