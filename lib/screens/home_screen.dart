@@ -197,10 +197,8 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart), label: 'Analytics'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet), label: 'Budget'),
+          BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: 'Analytics'),
+          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Budget'),
         ],
       ),
     );
